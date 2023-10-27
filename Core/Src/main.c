@@ -46,6 +46,8 @@ UART_HandleTypeDef huart1;
 
 SPI_HandleTypeDef hspi1;
 
+TIM_HandleTypeDef htim17;
+
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -56,10 +58,12 @@ static void MX_GPIO_Init(void);
 static void MX_LPUART1_UART_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_SPI1_Init(void);
+static void MX_TIM17_Init(void);
 void MX_USB_HOST_Process(void);
 
 /* USER CODE BEGIN PFP */
-
+void us_wait(uint32_t us);
+void ms_wait(uint32_t ms);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -99,6 +103,7 @@ int main(void)
   MX_USB_HOST_Init();
   MX_USART1_UART_Init();
   MX_SPI1_Init();
+  MX_TIM17_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -289,6 +294,38 @@ static void MX_SPI1_Init(void)
 }
 
 /**
+  * @brief TIM17 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM17_Init(void)
+{
+
+  /* USER CODE BEGIN TIM17_Init 0 */
+
+  /* USER CODE END TIM17_Init 0 */
+
+  /* USER CODE BEGIN TIM17_Init 1 */
+
+  /* USER CODE END TIM17_Init 1 */
+  htim17.Instance = TIM17;
+  htim17.Init.Prescaler = 0;
+  htim17.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim17.Init.Period = 79;
+  htim17.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim17.Init.RepetitionCounter = 0;
+  htim17.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim17) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM17_Init 2 */
+
+  /* USER CODE END TIM17_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -339,12 +376,46 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
+void us_wait(uint32_t us) {
+	TIM17->SR = 0;
+	TIM17->PSC = 0;											//Prescaler
+	//TIM17->ARR = 79;
+	TIM17->EGR = TIM_EGR_UG;									//reset timer counter and prescaler counter
 
+	TIM17->CR1 |= TIM_CR1_CEN;								//counter enable
+
+	for(uint32_t i=0; i<us; i++){
+		while( !(TIM17->SR & TIM_SR_UIF) );
+		TIM17->SR &= ~TIM_SR_UIF;
+		}
+	TIM17->CR1 &= ~TIM_CR1_CEN;								//counter disable
+
+}
+
+void ms_wait(uint32_t ms) {
+	TIM17->SR = 0;
+	TIM17->PSC = 999;										//Prescaler
+	//TIM17->ARR = 79;
+	TIM17->EGR = TIM_EGR_UG;									//reset timer counter and prescaler counter
+
+	TIM17->CR1 |= TIM_CR1_CEN;								//counter enable
+
+	for(uint32_t i=0; i<ms; i++){
+		while( !(TIM17->SR & TIM_SR_UIF) );
+		TIM17->SR &= ~TIM_SR_UIF;
+		}
+	TIM17->CR1 &= ~TIM_CR1_CEN;								//counter disable
+
+}
 /* USER CODE END 4 */
 
 /**
