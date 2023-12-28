@@ -41,7 +41,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-
+uint8_t msg[] = "hello world!\n\r";
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -55,7 +55,8 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern HCD_HandleTypeDef hhcd_USB_OTG_FS;
+extern UART_HandleTypeDef hlpuart1;
+extern UART_HandleTypeDef huart2;
 extern SPI_HandleTypeDef hspi1;
 /* USER CODE BEGIN EV */
 
@@ -214,6 +215,20 @@ void SPI1_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles USART2 global interrupt.
+  */
+void USART2_IRQHandler(void)
+{
+  /* USER CODE BEGIN USART2_IRQn 0 */
+
+  /* USER CODE END USART2_IRQn 0 */
+  HAL_UART_IRQHandler(&huart2);
+  /* USER CODE BEGIN USART2_IRQn 1 */
+
+  /* USER CODE END USART2_IRQn 1 */
+}
+
+/**
   * @brief This function handles EXTI line[15:10] interrupts.
   */
 void EXTI15_10_IRQHandler(void)
@@ -224,21 +239,31 @@ void EXTI15_10_IRQHandler(void)
   HAL_GPIO_EXTI_IRQHandler(B1_Pin);
   /* USER CODE BEGIN EXTI15_10_IRQn 1 */
   HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
+  uint16_t dataToSend = 0xE800;
+  uint16_t dataReceived = 0x0000;
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_SET);
+
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_RESET);
+  HAL_SPI_TransmitReceive(&hspi1, &dataToSend, &dataReceived, 2, HAL_MAX_DELAY);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_SET);
+  dataReceived = 0x0049;
+  HAL_UART_Transmit(&hlpuart1, &dataReceived, 2, 100);
+
   /* USER CODE END EXTI15_10_IRQn 1 */
 }
 
 /**
-  * @brief This function handles USB OTG FS global interrupt.
+  * @brief This function handles LPUART1 global interrupt.
   */
-void OTG_FS_IRQHandler(void)
+void LPUART1_IRQHandler(void)
 {
-  /* USER CODE BEGIN OTG_FS_IRQn 0 */
+  /* USER CODE BEGIN LPUART1_IRQn 0 */
 
-  /* USER CODE END OTG_FS_IRQn 0 */
-  HAL_HCD_IRQHandler(&hhcd_USB_OTG_FS);
-  /* USER CODE BEGIN OTG_FS_IRQn 1 */
+  /* USER CODE END LPUART1_IRQn 0 */
+  HAL_UART_IRQHandler(&hlpuart1);
+  /* USER CODE BEGIN LPUART1_IRQn 1 */
 
-  /* USER CODE END OTG_FS_IRQn 1 */
+  /* USER CODE END LPUART1_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
